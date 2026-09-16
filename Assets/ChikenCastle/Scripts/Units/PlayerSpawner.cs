@@ -1,57 +1,64 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // 💡 Импортируем новую систему ввода
+using UnityEngine.InputSystem;
 
 public class PlayerSpawner : MonoBehaviour
 {
-    [Header("Настройки спавна")]
-    [SerializeField] private GameObject unitPrefab;   // Префаб юнита
-    [SerializeField] private Transform enemyCastle;   // Цель (Замок врага)
-    [SerializeField] private Collider2D spawnArea;    // 2D-коллайдер зоны спавна
+    [Header("Префабы и цели")]
+    [SerializeField] private GameObject unitPrefab;
+    [SerializeField] private Transform enemyCastle;
+
+    [Header("Настройки команды")]
+    [SerializeField] private string myTag = "LeftPlayer";      // Тег для спавнящихся юнитов
+    [SerializeField] private string enemyTag = "RightPlayer";  // Тег врага
+
+    [Header("Зона спавна")]
+    [SerializeField] private Collider2D spawnArea;
 
     private Camera _mainCamera;
 
     private void Awake()
     {
-        // Кэшируем ссылку на главную камеру для оптимизации
         _mainCamera = Camera.main;
     }
 
     private void Update()
     {
-        // 1. Проверяем, подключена ли мышь и нажата ли левая кнопка в этом кадре
+        // Проверяем клик мыши через новую Input System
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
-            TrySpawnUnit();
-        }
-    }
+            Vector2 mousePosition = Mouse.current.position.ReadValue();
+            Vector3 worldPosition = _mainCamera.ScreenToWorldPoint(mousePosition);
+            worldPosition.z = 0; // Для 2D фиксируем Z
 
-    private void TrySpawnUnit()
-    {
-        // 2. Считываем позицию мыши на экране
-        Vector2 screenPosition = Mouse.current.position.ReadValue();
-
-        // 3. Переводим экранные пиксели в мировые 2D-координаты
-        Vector3 mouseWorldPosition = _mainCamera.ScreenToWorldPoint(screenPosition);
-        mouseWorldPosition.z = 0f; // Фиксируем Z-координату для XY-плоскости
-
-        // 4. Проверяем, попал ли клик в разрешенную 2D-зону
-        if (spawnArea != null && spawnArea.OverlapPoint(mouseWorldPosition))
-        {
-            // 💡 В будущем здесь будет проверка: if (HasEnoughResources())
-            SpawnAndSendUnit(mouseWorldPosition);
+            // Проверяем, попал ли клик в разрешенную зону спавна
+            if (spawnArea != null && spawnArea.OverlapPoint(worldPosition))
+            {
+                SpawnAndSendUnit(worldPosition);
+            }
         }
     }
 
     private void SpawnAndSendUnit(Vector3 position)
     {
-        // Создаем юнита в точке клика
+        // 1. Создаем юнита
         GameObject newUnit = Instantiate(unitPrefab, position, Quaternion.identity);
 
-        // Передаем цель через интерфейс IMovable (принцип D в SOLID)
+        // 2. Назначаем юниту его тег (LeftPlayer или RightPlayer)
+        newUnit.tag = myTag;
+
+        // 3. Отправляем в движение к замку
         IMovable movable = newUnit.GetComponent<IMovable>();
         if (movable != null && enemyCastle != null)
         {
             movable.SetTarget(enemyCastle);
+        }
+
+        // 4. Передаем цель для атаки
+        UnitAttack attack = newUnit.GetComponent<UnitAttack>();
+        if (attack != null && enemyCastle != null)
+        {
+            attack.SetEnemyTag(enemyTag); // 🏷️ Сообщаем юниту, кто его враг
+            attack.SetAttackTarget(enemyCastle);
         }
     }
 }

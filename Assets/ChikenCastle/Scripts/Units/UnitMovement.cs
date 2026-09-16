@@ -29,4 +29,20 @@ public class UnitMovement : MonoBehaviour, IMovable
         _target = target;
     }
 
+    public void Stop()
+    {
+        if (_agent != null && _agent.isOnNavMesh)
+        {
+            _agent.isStopped = true;
+        }
+    }
+
+    public void Resume()
+    {
+        if (_agent != null && _agent.isOnNavMesh)
+        {
+            _agent.isStopped = false;
+        }
+    }
+
 }
