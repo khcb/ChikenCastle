@@ -1,22 +1,35 @@
+using System;
 using UnityEngine;
 
 public class CastleHealth : MonoBehaviour, IDamageable
 {
-    [Header("Параметры здоровья")]
+    [Header("Параметры здоровья 🛡️")]
     [SerializeField] private float maxHealth = 100f;
+
     private float _currentHealth;
+
+    // Передаем float для точности урона
+    public event Action<float, float> OnHealthChanged;
+
+    public float CurrentHealth => _currentHealth;
+    public float MaxHealth => maxHealth;
 
     private void Awake()
     {
         _currentHealth = maxHealth;
     }
 
-    public void TakeDamage(float amount)
+    private void Start()
     {
-        _currentHealth -= amount;
-        Debug.Log($"Замок получил {amount} урона! Осталось HP: {_currentHealth}");
+        OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+    }
 
-        if (_currentHealth <= 0)
+    public void TakeDamage(float damage)
+    {
+        _currentHealth = Mathf.Max(0f, _currentHealth - damage);
+        OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+
+        if (_currentHealth <= 0f)
         {
             Die();
         }
@@ -24,7 +37,7 @@ public class CastleHealth : MonoBehaviour, IDamageable
 
     private void Die()
     {
-        Debug.Log("Замок уничтожен! Победа!");
-        Destroy(gameObject);
+        Debug.Log($"🏰 Замок {gameObject.name} уничтожен!");
+        gameObject.SetActive(false);
     }
 }

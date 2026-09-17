@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cc9c3876e1ed7b4fac3fbe103627328, type: 3}
+  m_Name: Gather
+  m_EditorClassIdentifier: Assembly-CSharp::UnitData
+  unitType: 2
+  unitName: "\u0421\u0431\u043E\u0440\u0449\u0438\u043A"
+  unitIcon: {fileID: 0}
+  description: 
+  cost: 10
+  spawnCooldown: 1
+  unitPrefab: {fileID: 7734784923625919357, guid: 4843a8a74cbb561408d0df308adba671, type: 3}
+  maxHealth: 50
+  armor: 0
+  moveSpeed: 3.5
+  damage: 0
+  attackRange: 0
+  attackSpeed: 0
+  gatherCapacity: 25
+  gatherSpeed: 1.2

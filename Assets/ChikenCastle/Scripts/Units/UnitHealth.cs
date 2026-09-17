@@ -2,19 +2,38 @@ using UnityEngine;
 
 public class UnitHealth : MonoBehaviour, IDamageable
 {
-    [Header("Параметры здоровья")]
-    [SerializeField] private float maxHealth = 20f;
+    [Header("Данные юнита (Scriptable Object) 📄")]
+    [SerializeField] private UnitData unitData;
+
     private float _currentHealth;
+    private float _armor;
 
     private void Awake()
     {
-        _currentHealth = maxHealth;
+        // Если данные уже назначены в префабе
+        if (unitData != null)
+        {
+            Init(unitData);
+        }
+    }
+
+    /// <summary>
+    /// Инициализация здоровья напрямую из ScriptableObject (вызывается при спавне)
+    /// </summary>
+    public void Init(UnitData data)
+    {
+        unitData = data;
+        _armor = unitData.Armor;
+        _currentHealth = unitData.MaxHealth;
     }
 
     public void TakeDamage(float amount)
     {
-        _currentHealth -= amount;
-        Debug.Log($"⚔️ Юнит {gameObject.name} получил {amount} урона! Осталось HP: {_currentHealth}");
+        // Учитываем броню (урон не может быть меньше 1)
+        float finalDamage = Mathf.Max(1f, amount - _armor);
+        _currentHealth -= finalDamage;
+
+        Debug.Log($"⚔️ {gameObject.name} получил {finalDamage} урона! HP: {_currentHealth}/{unitData.MaxHealth}");
 
         if (_currentHealth <= 0)
         {
@@ -24,7 +43,7 @@ public class UnitHealth : MonoBehaviour, IDamageable
 
     private void Die()
     {
-        Debug.Log($"💀 Юнит {gameObject.name} погиб!");
+        Debug.Log($"💀 {gameObject.name} погиб!");
         Destroy(gameObject);
     }
 }
