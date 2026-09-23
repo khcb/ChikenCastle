@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ff640888143a24046a7625cce920541f, type: 3}
-  m_Name: LeftPlayer
+  m_Name: RightPlayer
   m_EditorClassIdentifier: Assembly-CSharp::PlayerData
-  playerName: "\u041B\u0435\u0432\u044B\u0439 \u0418\u0433\u0440\u043E\u043A"
+  playerName: "\u041F\u0440\u0430\u0432\u044B\u0439 \u0438\u0433\u0440\u043E\u043A"
   selectedUnits:
   - {fileID: 11400000, guid: b23a201c33e42c2448112b2b237d7912, type: 2}
   - {fileID: 11400000, guid: 1c6e113c52c56484da94ead6fcc54eca, type: 2}

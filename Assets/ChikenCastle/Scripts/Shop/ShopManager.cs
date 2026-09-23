@@ -1,28 +1,28 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class ShopManager : MonoBehaviour
 {
-    [Header("Связанные компоненты 🎯")]
-    [SerializeField] private UnitSpawner unitSpawner;
+    [Header("Связанные компоненты")]
+    [SerializeField] private Spawner spawner;
     [SerializeField] private PlayerResources playerResources;
 
-    [Header("UI Компоненты 🖼️")]
+    [Header("UI")]
     [SerializeField] private Transform buttonsParent;
     [SerializeField] private GameObject buttonPrefab;
 
-    [Header("Данные Игрока 👤")]
-    public PlayerData playerData;
+    [Header("Данные игрока")]
+    [SerializeField] private PlayerData playerData;
 
-    private readonly List<BuyUnitButton> _spawnedButtons = new List<BuyUnitButton>();
-    private BuyUnitButton _selectedButton;
+    private readonly List<BuyUnitButton> spawnedButtons = new();
+
+    private BuyUnitButton selectedButton;
 
     private void OnEnable()
     {
         if (playerResources != null)
         {
-            playerResources.OnGoldChanged += RefreshButtonsState;
+            playerResources.OnResourcesChanged += RefreshButtons;
         }
     }
 
@@ -30,104 +30,154 @@ public class ShopManager : MonoBehaviour
     {
         if (playerResources != null)
         {
-            playerResources.OnGoldChanged -= RefreshButtonsState;
+            playerResources.OnResourcesChanged -= RefreshButtons;
         }
     }
 
     private void Start()
     {
-        InitializeShop(playerData);
+        InitializeShop();
     }
 
-    public void InitializeShop(PlayerData player)
+    // Создаём кнопки выбранных игроком юнитов
+    private void InitializeShop()
     {
         ClearShop();
 
-        if (player == null || player.SelectedUnits == null) return;
-
-        foreach (UnitData unit in player.SelectedUnits)
+        if (playerData == null)
         {
-            if (unit == null) continue;
-
-            GameObject newButton = Instantiate(buttonPrefab, buttonsParent);
-
-            if (newButton.TryGetComponent<BuyUnitButton>(out var buyButton))
-            {
-                buyButton.Setup(unit, this);
-                _spawnedButtons.Add(buyButton);
-            }
+            Debug.LogWarning("ShopManager: PlayerData не задан.");
+            return;
         }
 
-        // Первичное обновление состояния кнопок
+        if (playerData.SelectedUnits == null)
+        {
+            Debug.LogWarning("ShopManager: у PlayerData нет выбранных юнитов.");
+            return;
+        }
+
+        foreach (UnitData unitData in playerData.SelectedUnits)
+        {
+            if (unitData == null)
+                continue;
+
+            GameObject buttonObject =
+                Instantiate(buttonPrefab, buttonsParent);
+
+            if (!buttonObject.TryGetComponent<BuyUnitButton>(
+                    out BuyUnitButton button))
+            {
+                Debug.LogWarning(
+                    "На buttonPrefab отсутствует BuyUnitButton."
+                );
+
+                continue;
+            }
+
+            button.Setup(unitData, this);
+            spawnedButtons.Add(button);
+        }
+
         if (playerResources != null)
         {
-            RefreshButtonsState(playerResources.CurrentGold);
+            RefreshButtons(playerResources.CurrentResources);
         }
     }
 
-    /// <summary>
-    /// Вызывается автоматически при изменении баланса
-    /// </summary>
-    private void RefreshButtonsState(int currentGold)
+    // Обновляем доступность кнопок после изменения денег
+    private void RefreshButtons(int currentGold)
     {
-        foreach (var button in _spawnedButtons)
+        foreach (BuyUnitButton button in spawnedButtons)
         {
-            if (button != null)
-            {
-                button.UpdateInteractable(currentGold);
-            }
+            if (button == null)
+                continue;
+
+            button.UpdateInteractable(currentGold);
         }
     }
 
-    public void SelectButton(BuyUnitButton button, UnitData unitData)
+    // Вызывается BuyUnitButton при нажатии
+    public void SelectButton(
+        BuyUnitButton button,
+        UnitData unitData)
     {
-        if (_selectedButton == button)
+        if (button == null || unitData == null)
+            return;
+
+        // Повторное нажатие отменяет выбор
+        if (selectedButton == button)
         {
             CancelSelection();
             return;
         }
 
-        if (playerResources != null && !playerResources.HasEnoughGold(unitData.Cost)) return;
+        // Проверяем деньги
+        if (playerResources != null &&
+            !playerResources.HasEnoughResources(unitData.Cost))
+        {
+            return;
+        }
 
-        if (_selectedButton != null) _selectedButton.SetSelected(false);
+        // Снимаем выделение с предыдущей кнопки
+        if (selectedButton != null)
+        {
+            selectedButton.SetSelected(false);
+        }
 
-        _selectedButton = button;
-        _selectedButton.SetSelected(true);
+        // Запоминаем новую кнопку
+        selectedButton = button;
+        selectedButton.SetSelected(true);
 
-        if (unitSpawner != null) unitSpawner.SetSelectedUnit(unitData, this);
+        if (spawner == null)
+{
+    Debug.LogError("SHOP: Spawner НЕ назначен!");
+    return;
+}
+
+Debug.Log("SHOP: передаю юнита в Spawner: " + unitData.UnitName);
+
+spawner.SetSelectedUnit(unitData, this);
     }
 
+    // Вызывается Spawner после успешного создания юнита
     public void OnUnitSpawned(UnitData unitData)
     {
-        if (playerResources != null && unitData != null)
+        if (unitData == null)
+            return;
+
+        // Списываем деньги только после успешного размещения
+        if (playerResources != null)
         {
-            playerResources.TrySpendGold(unitData.Cost);
+            playerResources.TrySpendResources(unitData.Cost);
         }
 
-        ResetSelection();
+        CancelSelection();
     }
 
+    // Отмена выбора
     public void CancelSelection()
     {
-        ResetSelection();
-        if (unitSpawner != null) unitSpawner.ClearSelectedUnit();
-    }
-
-    public void ResetSelection()
-    {
-        if (_selectedButton != null)
+        if (selectedButton != null)
         {
-            _selectedButton.SetSelected(false);
-            _selectedButton = null;
+            selectedButton.SetSelected(false);
+            selectedButton = null;
+        }
+
+        if (spawner != null)
+        {
+            spawner.ClearSelectedUnit();
         }
     }
 
+    // Удаляем старые кнопки
     private void ClearShop()
     {
-        _spawnedButtons.Clear();
         foreach (Transform child in buttonsParent)
         {
             Destroy(child.gameObject);
         }
+
+        spawnedButtons.Clear();
+        selectedButton = null;
     }
 }

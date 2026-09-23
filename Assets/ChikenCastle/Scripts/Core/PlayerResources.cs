@@ -1,47 +1,47 @@
 using System;
 using UnityEngine;
-using TMPro;
 
 public class PlayerResources : MonoBehaviour
 {
-    [Header("Настройки 🪙")]
-    [SerializeField] private int currentGold = 100;
-    [SerializeField] private TMP_Text goldText;
+    [Header("Ресурс")]
+    [SerializeField] private int resources = 100;
 
-    // Событие передает текущее количество золота
-    public event Action<int> OnGoldChanged;
+    public int CurrentResources => resources;
 
-    public int CurrentGold => currentGold;
+    public event Action<int> OnResourcesChanged;
 
-    private void Start()
+
+    public bool HasEnoughResources(int amount)
     {
-        UpdateUI();
+        return resources >= amount;
     }
 
-    public bool HasEnoughGold(int amount) => currentGold >= amount;
-
-    public void AddResource(int amount)
+    public bool TrySpendResources(int amount)
     {
-        currentGold += amount;
-        UpdateUI();
+        if (amount <= 0)
+            return false;
+
+        if (resources < amount)
+            return false;
+
+        resources -= amount;
+
+        OnResourcesChanged?.Invoke(resources);
+
+        return true;
     }
 
-    public bool TrySpendGold(int amount)
+    public void AddResources(int amount)
     {
-        if (HasEnoughGold(amount))
-        {
-            currentGold -= amount;
-            UpdateUI();
-            return true;
-        }
-        return false;
-    }
+        if (amount <= 0)
+            return;
 
-    private void UpdateUI()
-    {
-        if (goldText != null) goldText.text = currentGold.ToString();
-        
-        // Уведомляем все подписанные магазины и UI о смене баланса
-        OnGoldChanged?.Invoke(currentGold);
+        resources += amount;
+
+        Debug.Log(
+            $"Получено ресурсов: {amount}. Всего: {resources}"
+        );
+
+        OnResourcesChanged?.Invoke(resources);
     }
 }

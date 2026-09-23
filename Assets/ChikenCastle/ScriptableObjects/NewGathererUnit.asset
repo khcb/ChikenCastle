@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c767635d581a2ea4cb517d4e946363d8, type: 3}
+  m_Name: NewGathererUnit
+  m_EditorClassIdentifier: Assembly-CSharp::GathererData
+  unitName: "\u0421\u0431\u043E\u0440\u0449\u0438\u043A"
+  unitIcon: {fileID: 0}
+  cost: 3
+  spawnCooldown: 1
+  unitPrefab: {fileID: 7928574945221825120, guid: 30dd1aeee26692e4ebe6bee6cb981de3, type: 3}
+  maxHealth: 100
+  moveSpeed: 3
+  detectionRange: 10
+  gatherRange: 1
+  gatherTime: 2
+  gatherAmount: 10

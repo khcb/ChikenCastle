@@ -3,50 +3,59 @@ using UnityEngine;
 
 public class CastleHealth : MonoBehaviour, IDamageable
 {
-    [Header("Параметры здоровья 🛡️")]
+    [Header("Здоровье")]
     [SerializeField] private float maxHealth = 100f;
 
-    private float _currentHealth;
-    private bool _isDead = false; // 👈 Защита от повторного вызова Die()
+    [Header("Команда")]
+    [SerializeField] private Team team;
+
+    private float currentHealth;
+    private bool isDead;
+
+    public float CurrentHealth => currentHealth;
+    public float MaxHealth => maxHealth;
+    public Team Team => team;
 
     public event Action<float, float> OnHealthChanged;
     public event Action<CastleHealth> OnCastleDestroyed;
 
-    public float CurrentHealth => _currentHealth;
-    public float MaxHealth => maxHealth;
-
     private void Awake()
     {
-        _currentHealth = maxHealth;
+        maxHealth = Mathf.Max(1f, maxHealth);
+        currentHealth = maxHealth;
     }
 
     private void Start()
     {
-        OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
-    public void TakeDamage(float damage)
+    public void TakeDamage(float amount)
     {
-        if (_isDead) return; // Если уже уничтожен, дальше код не идет
+        if (isDead)
+            return;
 
-        _currentHealth = Mathf.Max(0f, _currentHealth - damage);
-        OnHealthChanged?.Invoke(_currentHealth, maxHealth);
+        currentHealth = Mathf.Max(0f, currentHealth - amount);
 
-        if (_currentHealth <= 0f)
+        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+        if (currentHealth <= 0f)
         {
             Die();
         }
     }
 
-    private void Die()
+    public void Die()
     {
-        if (_isDead) return;
-        _isDead = true; // Фиксируем смерть
+        if (isDead)
+            return;
 
-        Debug.Log($"🏰 Замок {gameObject.name} уничтожен!");
-        
-        OnCastleDestroyed?.Invoke(this); // Вызываем событие
+        isDead = true;
 
-        gameObject.SetActive(false); // Выключаем замок
+        Debug.Log($"Замок {gameObject.name} уничтожен.");
+
+        OnCastleDestroyed?.Invoke(this);
+
+        gameObject.SetActive(false);
     }
 }
