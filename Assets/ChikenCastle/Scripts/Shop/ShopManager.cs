@@ -145,10 +145,14 @@ spawner.SetSelectedUnit(unitData, this);
         if (unitData == null)
             return;
 
-        // Списываем деньги только после успешного размещения
         if (playerResources != null)
         {
             playerResources.TrySpendResources(unitData.Cost);
+        }
+
+        if (selectedButton != null)
+        {
+            selectedButton.StartCooldown();
         }
 
         CancelSelection();

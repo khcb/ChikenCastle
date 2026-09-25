@@ -107,7 +107,7 @@ public class GathererUnit : UnitBase
             currentState = GathererState.GoingToResource;
             return;
         }
-
+        SetTarget(homeBase);
         currentState = GathererState.Returning;
     }
 

@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: NewWarriorUnit
   m_EditorClassIdentifier: Assembly-CSharp::WarriorUnitData
   unitName: "\u0412\u043E\u0439\u043D"
-  unitIcon: {fileID: 0}
-  cost: 5
-  spawnCooldown: 1
+  unitIcon: {fileID: 3593962075002953200, guid: 8fcc312fe61378945a303040ebce0504, type: 3}
+  cost: 20
+  spawnCooldown: 3
   unitPrefab: {fileID: 3812919439916640134, guid: 474db7ed522033f4692594b6dfd730f8, type: 3}
   maxHealth: 100
-  moveSpeed: 3
-  damage: 15
+  moveSpeed: 0.8
+  damage: 20
   detectionRange: 5
-  attackRange: 1
+  attackRange: 1.2
   attackSpeed: 1
   attackCooldown: 1

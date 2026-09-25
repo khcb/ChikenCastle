@@ -32,10 +32,10 @@ public class UnitBase : MonoBehaviour, IDamageable
         _agent.updateRotation = false;
         _agent.updateUpAxis = false;
 
-        // Автоматически выставляем здоровье из ScriptableObject при старте
         if (unitData != null)
         {
-            currentHealth = unitData.MaxHealth; 
+            currentHealth = unitData.MaxHealth;
+            _agent.speed = unitData.MoveSpeed;
         }
     }
 
@@ -85,6 +85,31 @@ public class UnitBase : MonoBehaviour, IDamageable
         }
     }
 
+    protected virtual void LateUpdate()
+    {
+        Flip();
+    }
+
+    private void Flip()
+    {
+        Transform target = currentTarget != null
+            ? currentTarget
+            : defaultTarget;
+
+        if (target == null)
+            return;
+
+        float direction = target.position.x - transform.position.x;
+
+        if (Mathf.Abs(direction) < 0.01f)
+            return;
+
+        Vector3 scale = transform.localScale;
+
+        scale.x = Mathf.Abs(scale.x) * Mathf.Sign(direction);
+
+        transform.localScale = scale;
+    }
     public virtual void TakeDamage(float damage)
     {
         if (currentHealth <= 0) return;

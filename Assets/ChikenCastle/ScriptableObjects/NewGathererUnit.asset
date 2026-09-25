@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: NewGathererUnit
   m_EditorClassIdentifier: Assembly-CSharp::GathererData
   unitName: "\u0421\u0431\u043E\u0440\u0449\u0438\u043A"
-  unitIcon: {fileID: 0}
-  cost: 3
-  spawnCooldown: 1
+  unitIcon: {fileID: -4388603807960989688, guid: 8fcc312fe61378945a303040ebce0504, type: 3}
+  cost: 25
+  spawnCooldown: 5
   unitPrefab: {fileID: 7928574945221825120, guid: 30dd1aeee26692e4ebe6bee6cb981de3, type: 3}
-  maxHealth: 100
-  moveSpeed: 3
+  maxHealth: 70
+  moveSpeed: 0.75
   detectionRange: 10
   gatherRange: 1
   gatherTime: 2
-  gatherAmount: 10
+  gatherAmount: 50
