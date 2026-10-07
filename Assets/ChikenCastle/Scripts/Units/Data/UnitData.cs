@@ -16,6 +16,9 @@ public class UnitData : ScriptableObject
     [SerializeField] private float maxHealth = 100f;
     [SerializeField] private float moveSpeed = 3f;
 
+    [Header("Ограничения")]
+    [SerializeField] private int maxUnits = 10;
+
     // Геттеры
     public string UnitName => unitName;
     public Sprite UnitIcon => unitIcon;
@@ -24,4 +27,5 @@ public class UnitData : ScriptableObject
     public GameObject UnitPrefab => unitPrefab;
     public float MaxHealth => maxHealth;
     public float MoveSpeed => moveSpeed;
+    public int MaxUnits => maxUnits;
 }

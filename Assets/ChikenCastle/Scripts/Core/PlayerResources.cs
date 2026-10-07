@@ -4,11 +4,11 @@ using UnityEngine;
 public class PlayerResources : MonoBehaviour
 {
     [Header("Ресурс")]
-    [SerializeField] private int resources = 50;
+    [SerializeField] private int resources = 100;
 
     [Header("Автоматическое получение")]
-    [SerializeField] private int incomeAmount = 2;
-    [SerializeField] private float incomeInterval = 1f;
+    [SerializeField] private int incomeAmount = 1;
+    [SerializeField] private float incomeInterval = 3f;
 
     public int CurrentResources => resources;
 
@@ -45,6 +45,11 @@ public class PlayerResources : MonoBehaviour
             return false;
 
         resources -= amount;
+
+        Debug.Log(
+            $"RESOURCES: потрачено {amount}. " +
+            $"Осталось: {resources}"
+        );
 
         OnResourcesChanged?.Invoke(resources);
 

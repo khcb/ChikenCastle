@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
 public class Spawner : MonoBehaviour
 {
@@ -9,124 +11,268 @@ public class Spawner : MonoBehaviour
 
     [Header("Цель")]
     [SerializeField] private Transform enemyCastle;
+
     [Header("Свой замок")]
     [SerializeField] private Transform homeCastle;
 
     [Header("Зона размещения")]
     [SerializeField] private Collider2D spawnCollider;
 
+    [Header("Настройки группы")]
+    [SerializeField] private float spawnSpacing = 0.5f;
+
+    [Header("Магазин")]
+    [SerializeField] private ShopManager shopManager;
+
     private UnitData selectedUnit;
-    private ShopManager shopManager;
+    private int selectedCount;
 
-    public void SetSelectedUnit(UnitData unitData, ShopManager shop)
-{
-    selectedUnit = unitData;
-    shopManager = shop;
+    // Сколько живых юнитов каждого типа сейчас находится на карте
+    private Dictionary<UnitData, int> spawnedUnits = new();
 
-    Debug.Log("SPAWNER: получил юнита: " + unitData.UnitName);
-}
+
+    // =========================================================
+    // ВЫБОР ЮНИТА
+    // =========================================================
+
+    public void SetSelectedUnit(
+        UnitData unitData,
+        int count)
+    {
+        selectedUnit = unitData;
+        selectedCount = count;
+
+        Debug.Log(
+            $"SPAWNER: {unitData.UnitName} x{count}"
+        );
+    }
+
 
     public void ClearSelectedUnit()
     {
         selectedUnit = null;
-        shopManager = null;
+        selectedCount = 0;
 
         Debug.Log("SPAWNER: выбор очищен");
     }
 
-    private void Update()
+
+    // =========================================================
+    // INPUT
+    // =========================================================
+
+private void Update()
+{
+    if (selectedUnit == null)
+        return;
+
+    // ПК
+    if (Mouse.current != null &&
+        Mouse.current.leftButton.wasPressedThisFrame)
     {
-        // Если юнит не выбран — ничего не делаем
-        if (selectedUnit == null)
-            return;
-
-        // Проверяем нажатие мыши
-        if (Mouse.current.leftButton.wasPressedThisFrame)
+        if (EventSystem.current != null &&
+            EventSystem.current.IsPointerOverGameObject())
         {
-            Debug.Log("SPAWNER: получен клик мыши");
-
-            TrySpawn();
+            return;
         }
+
+        TrySpawn(
+            Mouse.current.position.ReadValue()
+        );
     }
 
-    private void TrySpawn()
+    // Телефон
+    if (Touchscreen.current != null &&
+        Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
     {
-        // Проверяем Collider
-        if (spawnCollider == null)
-        {
-            Debug.LogError(
-                "SPAWNER: Spawn Collider НЕ назначен!"
-            );
+        int touchId =
+            Touchscreen.current.primaryTouch.touchId.ReadValue();
 
+        if (EventSystem.current != null &&
+            EventSystem.current.IsPointerOverGameObject(touchId))
+        {
             return;
         }
 
-        // Проверяем камеру
-        if (Camera.main == null)
-        {
-            Debug.LogError(
-                "SPAWNER: Camera.main не найдена!"
-            );
+        TrySpawn(
+            Touchscreen.current.primaryTouch.position.ReadValue()
+        );
+    }
+}
 
-            return;
-        }
 
-        // Получаем позицию мыши в мире
-        Vector2 mousePosition =
-            Camera.main.ScreenToWorldPoint(
-                Mouse.current.position.ReadValue()
-            );
+    // =========================================================
+    // ПОПЫТКА СПАВНА
+    // =========================================================
 
-        Debug.Log(
-            "SPAWNER: позиция мыши = " + mousePosition
+    private void TrySpawn(Vector2 screenPosition)
+{
+    // -----------------------------------------------------
+    // ПРОВЕРЯЕМ ВЫБОР
+    // -----------------------------------------------------
+
+    if (selectedUnit == null)
+    {
+        Debug.LogWarning(
+            "SPAWNER: юнит не выбран!"
         );
 
-        // Проверяем попадание в нашу зону
-        bool canPlace =
-            spawnCollider.OverlapPoint(mousePosition);
+        return;
+    }
 
-        if (!canPlace)
-        {
-            Debug.Log(
-                "SPAWNER: клик ВНЕ зоны размещения"
-            );
-
-            return;
-        }
-
-        Debug.Log(
-            "SPAWNER: клик ВНУТРИ зоны размещения"
+    if (selectedCount <= 0)
+    {
+        Debug.LogWarning(
+            "SPAWNER: количество юнитов <= 0!"
         );
 
-        // Создаём юнита
-        GameObject unitObject = Spawn(
+        return;
+    }
+
+
+    // -----------------------------------------------------
+    // ПРОВЕРЯЕМ ЗОНУ
+    // -----------------------------------------------------
+
+    if (spawnCollider == null)
+    {
+        Debug.LogError(
+            "SPAWNER: Spawn Collider НЕ назначен!"
+        );
+
+        return;
+    }
+
+    if (Camera.main == null)
+    {
+        Debug.LogError(
+            "SPAWNER: Camera.main не найдена!"
+        );
+
+        return;
+    }
+
+
+    Vector3 worldPosition =
+        Camera.main.ScreenToWorldPoint(
+            screenPosition
+        );
+
+    Debug.Log(
+        $"SPAWNER: позиция = {worldPosition}"
+    );
+
+
+    if (!spawnCollider.OverlapPoint(worldPosition))
+    {
+        Debug.Log(
+            "SPAWNER: клик ВНЕ зоны размещения"
+        );
+
+        return;
+    }
+
+
+    // -----------------------------------------------------
+    // ПРОВЕРЯЕМ ЛИМИТ
+    // -----------------------------------------------------
+
+    if (!CanAddUnits(
             selectedUnit,
-            mousePosition
+            selectedCount))
+    {
+        Debug.Log(
+            $"SPAWNER: недостаточно свободных мест " +
+            $"для {selectedUnit.UnitName}"
         );
 
-        // Если создание не удалось
+        return;
+    }
+
+
+    // -----------------------------------------------------
+    // СОЗДАЁМ ГРУППУ
+    // -----------------------------------------------------
+
+    Debug.Log(
+        $"SPAWNER: размещаем " +
+        $"{selectedUnit.UnitName} x{selectedCount}"
+    );
+
+
+    for (int i = 0; i < selectedCount; i++)
+    {
+        Vector3 spawnPosition =
+            worldPosition +
+            GetSpawnOffset(i);
+
+        GameObject unitObject =
+            Spawn(
+                selectedUnit,
+                spawnPosition
+            );
+
         if (unitObject == null)
         {
             Debug.LogError(
-                "SPAWNER: юнит НЕ был создан!"
+                "SPAWNER: не удалось создать юнита!"
             );
 
             return;
         }
+    }
 
+
+    // -----------------------------------------------------
+    // УСПЕШНО СОЗДАЛИ
+    // -----------------------------------------------------
+
+    Debug.Log(
+        $"SPAWNER: успешно создано " +
+        $"{selectedCount} юнитов"
+    );
+
+
+    // -----------------------------------------------------
+    // СПИСЫВАЕМ РЕСУРСЫ
+    // -----------------------------------------------------
+
+    if (shopManager != null)
+    {
         Debug.Log(
-            "SPAWNER: юнит успешно создан"
+            $"SPAWNER: вызываю OnUnitsSpawned: " +
+            $"{selectedUnit.UnitName} x{selectedCount}"
         );
 
-        // Сообщаем магазину
-        if (shopManager != null)
-        {
-            shopManager.OnUnitSpawned(selectedUnit);
-        }
-
-        // Сбрасываем выбор
-        ClearSelectedUnit();
+        shopManager.OnUnitsSpawned(
+            selectedUnit,
+            selectedCount
+        );
     }
+    else
+    {
+        Debug.LogError(
+            "SPAWNER: ShopManager НЕ назначен!"
+        );
+    }
+
+
+    // -----------------------------------------------------
+    // ЗВУК
+    // -----------------------------------------------------
+
+    if (AudioManager.Instance != null)
+    {
+        AudioManager.Instance.PlaySound(
+            SoundType.Spawn
+        );
+    }
+}
+
+
+    // =========================================================
+    // СОЗДАНИЕ ОДНОГО ЮНИТА
+    // =========================================================
 
     private GameObject Spawn(
         UnitData data,
@@ -144,19 +290,29 @@ public class Spawner : MonoBehaviour
         if (data.UnitPrefab == null)
         {
             Debug.LogError(
-                "SPAWNER: у " +
-                data.UnitName +
-                " не назначен UnitPrefab!"
+                $"SPAWNER: у {data.UnitName} " +
+                "не назначен UnitPrefab!"
             );
 
             return null;
         }
 
-        GameObject unitObject = Instantiate(
-            data.UnitPrefab,
-            position,
-            Quaternion.identity
-        );
+
+        // -----------------------------------------------------
+        // СОЗДАЁМ
+        // -----------------------------------------------------
+
+        GameObject unitObject =
+            Instantiate(
+                data.UnitPrefab,
+                position,
+                Quaternion.identity
+            );
+
+
+        // -----------------------------------------------------
+        // ПОЛУЧАЕМ UNIT BASE
+        // -----------------------------------------------------
 
         UnitBase unit =
             unitObject.GetComponent<UnitBase>();
@@ -164,9 +320,8 @@ public class Spawner : MonoBehaviour
         if (unit == null)
         {
             Debug.LogError(
-                "SPAWNER: на префабе " +
-                data.UnitName +
-                " нет UnitBase!"
+                $"SPAWNER: на префабе {data.UnitName} " +
+                "нет UnitBase!"
             );
 
             Destroy(unitObject);
@@ -174,20 +329,191 @@ public class Spawner : MonoBehaviour
             return null;
         }
 
-        // Назначаем команду
+
+        // -----------------------------------------------------
+        // СЧИТАЕМ ЮНИТА
+        // -----------------------------------------------------
+
+        AddSpawnedUnit(data);
+
+
+        // Когда юнит умрёт — уменьшим счётчик
+        unit.OnDied += OnUnitDied;
+
+
+        // -----------------------------------------------------
+        // ОБЩИЕ НАСТРОЙКИ
+        // -----------------------------------------------------
+
         unit.SetTeam(team);
-        // Назначаем замок 
+
         unit.SetDefaultTarget(enemyCastle);
 
-        GathererUnit gatherer = unitObject.GetComponent<GathererUnit>();
+
+        // -----------------------------------------------------
+        // ЕСЛИ ЭТО СБОРЩИК
+        // -----------------------------------------------------
+
+        GathererUnit gatherer =
+            unitObject.GetComponent<GathererUnit>();
 
         if (gatherer != null)
         {
-            gatherer.SetPlayerResources(playerResources);
-            gatherer.SetHomeBase(homeCastle);
+            gatherer.SetPlayerResources(
+                playerResources
+            );
+
+            gatherer.SetHomeBase(
+                homeCastle
+            );
         }
+
 
         return unitObject;
     }
-}
 
+
+    // =========================================================
+    // ЛИМИТЫ ЮНИТОВ
+    // =========================================================
+
+    public int GetUnitCount(UnitData data)
+    {
+        if (data == null)
+            return 0;
+
+        if (spawnedUnits.TryGetValue(
+                data,
+                out int count))
+        {
+            return count;
+        }
+
+        return 0;
+    }
+
+
+    public bool CanAddUnit(UnitData data)
+    {
+        if (data == null)
+            return false;
+
+        int currentCount =
+            GetUnitCount(data);
+
+        return currentCount < data.MaxUnits;
+    }
+
+
+    public bool CanAddUnits(
+        UnitData data,
+        int amount)
+    {
+        if (data == null)
+            return false;
+
+        if (amount <= 0)
+            return false;
+
+        int currentCount =
+            GetUnitCount(data);
+
+        return currentCount + amount <=
+               data.MaxUnits;
+    }
+
+
+    private void AddSpawnedUnit(
+        UnitData data)
+    {
+        if (!spawnedUnits.ContainsKey(data))
+        {
+            spawnedUnits[data] = 0;
+        }
+
+        spawnedUnits[data]++;
+    }
+
+
+    // =========================================================
+    // ЮНИТ УМЕР
+    // =========================================================
+
+    private void OnUnitDied(UnitBase unit)
+    {
+        if (unit == null)
+            return;
+
+        UnitData data =
+            unit.UnitData;
+
+        if (data == null)
+            return;
+
+        if (!spawnedUnits.ContainsKey(data))
+            return;
+
+
+        spawnedUnits[data]--;
+
+
+        if (spawnedUnits[data] <= 0)
+        {
+            spawnedUnits.Remove(data);
+        }
+
+
+        Debug.Log(
+            $"SPAWNER: {data.UnitName} " +
+            $"{GetUnitCount(data)}/{data.MaxUnits}"
+        );
+
+
+        // Обновляем кнопки магазина
+        UpdateShopButtons();
+    }
+
+
+    // =========================================================
+    // ОБНОВЛЕНИЕ КНОПОК
+    // =========================================================
+
+    private void UpdateShopButtons()
+    {
+        if (shopManager == null)
+            return;
+
+        shopManager.UpdateUnitButtons();
+    }
+
+
+    // =========================================================
+    // РАСКЛАДКА ГРУППЫ
+    // =========================================================
+
+    private Vector3 GetSpawnOffset(
+        int index)
+    {
+        int columns = 3;
+
+        int row =
+            index / columns;
+
+        int column =
+            index % columns;
+
+        float x =
+            (column - 1) *
+            spawnSpacing;
+
+        float y =
+            row *
+            spawnSpacing;
+
+        return new Vector3(
+            x,
+            y,
+            0f
+        );
+    }
+}

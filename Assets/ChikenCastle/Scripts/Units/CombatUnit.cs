@@ -10,6 +10,8 @@ public abstract class CombatUnit : UnitBase
 
     private void Update()
     {
+        if (IsDead) return;
+        
         if (!HasValidTarget())
         {
             currentTarget = null;
@@ -75,6 +77,11 @@ public abstract class CombatUnit : UnitBase
 
             if (component == null)
                 continue;
+            
+            // === ПРОВЕРКА 1: Если найденный юнит мертв, пропускаем его ===
+            UnitBase enemyUnit = component.GetComponentInParent<UnitBase>();
+            if (enemyUnit != null && enemyUnit.IsDead)
+                continue;
 
             float distance = Vector2.Distance(
                 transform.position,
@@ -109,6 +116,11 @@ public abstract class CombatUnit : UnitBase
             currentTarget.GetComponentInParent<IDamageable>();
 
         if (damageable == null)
+            return false;
+
+        // === ПРОВЕРКА 2: Если текущая цель умерла, она больше не валидна ===
+        UnitBase unit = currentTarget.GetComponentInParent<UnitBase>();
+        if (unit != null && unit.IsDead)
             return false;
 
         return true;

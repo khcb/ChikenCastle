@@ -32,6 +32,8 @@ public class GathererUnit : UnitBase
 
     private void Update()
     {
+        if (IsDead) return;
+        
         switch (currentState)
         {
             case GathererState.GoingToResource:
@@ -57,6 +59,7 @@ public class GathererUnit : UnitBase
             if (currentResource == null)
             {
                 StopMove();
+                
                 return;
             }
         }
@@ -84,6 +87,7 @@ public class GathererUnit : UnitBase
         StopMove();
 
         gatherTimer = 0f;
+        unitAnimation?.Attack();
         currentState = GathererState.Gathering;
     }
 
@@ -107,6 +111,8 @@ public class GathererUnit : UnitBase
             currentState = GathererState.GoingToResource;
             return;
         }
+
+        
         SetTarget(homeBase);
         currentState = GathererState.Returning;
     }
@@ -129,6 +135,8 @@ public class GathererUnit : UnitBase
 
         if (distance > gathererData.GatherRange)
         {
+            
+
             MoveTo(homeBase.position);
             return;
         }
@@ -147,10 +155,13 @@ public class GathererUnit : UnitBase
             Debug.LogWarning("GathererUnit: PlayerResources не назначен!");
             return;
         }
-
+            AudioManager.Instance.PlaySound(
+                SoundType.Gather
+            );
         playerResources.AddResources(carriedResource);
 
         carriedResource = 0;
+        
     }
 
     private void FindResource()
@@ -190,12 +201,13 @@ public class GathererUnit : UnitBase
     }
 
     public void SetPlayerResources(PlayerResources resources)
-{
-    playerResources = resources;
-}
+    {
+        playerResources = resources;
+    }
 
     public void SetHomeBase(Transform homeBase)
     {
+        
         this.homeBase = homeBase;
     }
 }

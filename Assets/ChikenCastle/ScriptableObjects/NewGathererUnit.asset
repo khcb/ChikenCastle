@@ -18,8 +18,9 @@ MonoBehaviour:
   spawnCooldown: 5
   unitPrefab: {fileID: 7928574945221825120, guid: 30dd1aeee26692e4ebe6bee6cb981de3, type: 3}
   maxHealth: 70
-  moveSpeed: 0.75
+  moveSpeed: 0.5
+  maxUnits: 3
   detectionRange: 10
   gatherRange: 1
-  gatherTime: 2
+  gatherTime: 5
   gatherAmount: 50

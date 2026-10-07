@@ -28,6 +28,11 @@ public class WarriorUnit : CombatUnit
         }
 
         Debug.Log("Атакую");
+        AudioManager.Instance.PlaySound(
+                SoundType.WarriorAttack
+        );
+
+        unitAnimation?.Attack();
         target.TakeDamage(warriorData.Damage);
     }
 }

@@ -18,9 +18,10 @@ MonoBehaviour:
   spawnCooldown: 5
   unitPrefab: {fileID: 1572880013319621995, guid: 3460e9aed6782fa4abc721dd74a13f62, type: 3}
   maxHealth: 60
-  moveSpeed: 0.7
+  moveSpeed: 0.4
+  maxUnits: 6
   damage: 15
   detectionRange: 5
-  attackRange: 5
-  attackSpeed: 1
+  attackRange: 4.5
+  attackSpeed: 0.8
   attackCooldown: 1.2

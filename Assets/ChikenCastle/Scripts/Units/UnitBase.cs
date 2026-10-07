@@ -1,6 +1,6 @@
+using System;
 using UnityEngine;
-using UnityEngine.Events; 
-
+using UnityEngine.Events;
 
 public enum Team
 {
@@ -11,13 +11,16 @@ public enum Team
 public class UnitBase : MonoBehaviour, IDamageable
 {
     public Team Team => team;
+    public bool IsDead => currentHealth <= 0; // или проверка флага isDead
     
     [SerializeField] protected UnitData unitData;
     [SerializeField] private UnityEvent dieEvent;
     [SerializeField] protected Team team;
+
+    public event Action<UnitBase> OnDied;
+    public UnitData UnitData => unitData;
     
-    
-    
+    protected UnitAnimation unitAnimation;
     protected Transform defaultTarget;
     protected Transform currentTarget;
     private UnityEngine.AI.NavMeshAgent _agent;
@@ -27,6 +30,7 @@ public class UnitBase : MonoBehaviour, IDamageable
     protected virtual void Awake()
     {
         _agent = GetComponent<UnityEngine.AI.NavMeshAgent>();
+        unitAnimation = GetComponent<UnitAnimation>();
 
         // Настройки 2D для NavMeshPlus
         _agent.updateRotation = false;
@@ -36,6 +40,28 @@ public class UnitBase : MonoBehaviour, IDamageable
         {
             currentHealth = unitData.MaxHealth;
             _agent.speed = unitData.MoveSpeed;
+        }
+    }
+
+    protected virtual void Start()
+    {
+        // Принудительно обнуляем Z, так как 2D-навигация работает строго на плоскости Z = 0
+        Vector3 spawnPos2D = new Vector3(transform.position.x, transform.position.y, 0f);
+
+        // Ищем ближайшую точку на сетке в радиусе 5 единиц
+        if (UnityEngine.AI.NavMesh.SamplePosition(spawnPos2D, out UnityEngine.AI.NavMeshHit hit, 5f, UnityEngine.AI.NavMesh.AllAreas))
+        {
+            // Ставим юнит точно на найденную позицию сетки (с Z = 0)
+            transform.position = hit.position;
+
+            if (_agent != null)
+            {
+                _agent.enabled = true;
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"{name} заспавнился слишком далеко от NavMesh! Координаты попытки: {transform.position}");
         }
     }
 
@@ -63,9 +89,11 @@ public class UnitBase : MonoBehaviour, IDamageable
 
         if (!_agent.isOnNavMesh)
             return;
-
+ 
+        
         _agent.isStopped = false;
         _agent.SetDestination(position);
+        unitAnimation?.Walk();
     }
 
     public  void StopMove()
@@ -87,6 +115,14 @@ public class UnitBase : MonoBehaviour, IDamageable
 
     protected virtual void LateUpdate()
     {
+        // Жестко фиксируем Z на нуле, чтобы агент не смещал юнит по глубине
+        Vector3 pos = transform.position;
+        if (pos.z != 0f)
+        {
+            pos.z = 0f;
+            transform.position = pos;
+        }
+
         Flip();
     }
 
@@ -124,8 +160,13 @@ public class UnitBase : MonoBehaviour, IDamageable
 
     public virtual void Die()
     {
+        if (_agent != null) _agent.enabled = false;
+        unitAnimation?.Death();
         dieEvent?.Invoke(); 
-        gameObject.SetActive(false); 
+
+        OnDied?.Invoke(this);
+        //gameObject.SetActive(false); 
     }
+
 }
 

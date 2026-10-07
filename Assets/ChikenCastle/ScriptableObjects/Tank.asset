@@ -19,6 +19,7 @@ MonoBehaviour:
   unitPrefab: {fileID: 3812919439916640134, guid: e7cbcba6aafc0be4da81a784fb9bae27, type: 3}
   maxHealth: 220
   moveSpeed: 0.6
+  maxUnits: 4
   damage: 25
   detectionRange: 4
   attackRange: 1.2

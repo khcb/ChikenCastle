@@ -66,7 +66,7 @@ public class ArcherUnit : CombatUnit
             return;
         }
 
-        Debug.Log("Стреляю");
+        unitAnimation?.Attack();
 
         Arrow arrow = Instantiate(
             arrowPrefab,

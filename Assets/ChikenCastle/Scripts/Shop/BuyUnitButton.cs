@@ -1,118 +1,78 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class BuyUnitButton : MonoBehaviour
 {
-    [Header("UI Компоненты")]
+    [Header("UI")]
     [SerializeField] private Button buttonComponent;
     [SerializeField] private Image backgroundImage;
     [SerializeField] private Image iconImage;
-    [SerializeField] private TMP_Text priceText; // Отображает цену, а при кулдауне — таймер
+    [SerializeField] private TMP_Text priceText;
+    [SerializeField] private TMP_Text countText;
 
-    [Header("Настройки подсветки")]
+    [Header("Цвет")]
     [SerializeField] private Color normalColor = Color.white;
     [SerializeField] private Color selectedColor = Color.green;
-    [SerializeField] private GameObject selectionBorder;
 
     private UnitData unitData;
     private ShopManager shopManager;
-    private float cooldownTimer;
 
-    public void Setup(UnitData unitData, ShopManager shopManager)
+    public UnitData UnitData => unitData;
+
+    public void Setup(UnitData data, ShopManager manager)
     {
-        this.unitData = unitData;
-        this.shopManager = shopManager;
+        unitData = data;
+        shopManager = manager;
 
-        if (iconImage != null && unitData.UnitIcon != null)
-            iconImage.sprite = unitData.UnitIcon;
+        priceText.text = data.Cost.ToString();
 
-        if (buttonComponent != null)
-        {
-            buttonComponent.onClick.RemoveAllListeners();
-            buttonComponent.onClick.AddListener(OnClick);
-        }
+        if (iconImage != null)
+            iconImage.sprite = data.UnitIcon;
 
+        buttonComponent.onClick.RemoveAllListeners();
+        buttonComponent.onClick.AddListener(OnClick);
+
+        SetCount(0);
         SetSelected(false);
-        cooldownTimer = 0f;
-        UpdateCooldownUI();
-    }
-
-    private void Update()
-    {
-        if (cooldownTimer <= 0f)
-            return;
-
-        cooldownTimer -= Time.deltaTime;
-
-        if (cooldownTimer < 0f)
-            cooldownTimer = 0f;
-
-        UpdateCooldownUI();
-    }
-
-    private void UpdateCooldownUI()
-    {
-        bool cooldownFinished = cooldownTimer <= 0f;
-
-        if (buttonComponent != null)
-        {
-            buttonComponent.interactable = cooldownFinished;
-        }
-
-        if (priceText != null && unitData != null)
-        {
-            if (cooldownFinished)
-            {
-                // Если кулдаун закончился, возвращаем текст стоимости
-                priceText.text = unitData.Cost.ToString();
-            }
-            else
-            {
-                // Если идет кулдаун, показываем округленное время таймера
-                priceText.text = Mathf.CeilToInt(cooldownTimer).ToString();
-            }
-        }
-    }
-
-    public void StartCooldown()
-    {
-        if (unitData == null)
-            return;
-
-        cooldownTimer = unitData.SpawnCooldown;
-        UpdateCooldownUI();
     }
 
     private void OnClick()
     {
-        if (unitData != null && shopManager != null)
-        {
-            shopManager.SelectButton(this, unitData);
-        }
-    }
-
-    public void UpdateInteractable(int currentResources)
-    {
-        if (unitData == null || buttonComponent == null)
+        if (unitData == null || shopManager == null)
             return;
 
-        bool hasResources = currentResources >= unitData.Cost;
-        bool cooldownFinished = cooldownTimer <= 0f;
-
-        buttonComponent.interactable = hasResources && cooldownFinished;
+        shopManager.AddUnit(unitData, this);
     }
 
-    public void SetSelected(bool isSelected)
+    public void SetCount(int count)
     {
-        if (backgroundImage != null)
-        {
-            backgroundImage.color = isSelected ? selectedColor : normalColor;
-        }
+        if (countText == null)
+            return;
 
-        if (selectionBorder != null)
-        {
-            selectionBorder.SetActive(isSelected);
-        }
+        countText.text = count > 0
+            ? $"×{count}"
+            : "";
+    }
+
+    public void SetSelected(bool selected)
+    {
+        if (backgroundImage == null)
+            return;
+
+        backgroundImage.color =
+            selected ? selectedColor : normalColor;
+    }
+
+    public void UpdateInteractable(
+    int currentGold,
+    bool canSpawn)
+    {
+        if (unitData == null)
+            return;
+
+        buttonComponent.interactable =
+            currentGold >= unitData.Cost &&
+            canSpawn;
     }
 }

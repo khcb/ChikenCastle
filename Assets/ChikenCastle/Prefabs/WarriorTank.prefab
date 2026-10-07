@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 167600110744747279}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.039, y: 0.387, z: 0}
+  m_LocalPosition: {x: 0.091, y: 0.464, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -79,14 +79,14 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 34
+  m_SortingOrder: -212
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 7479403301514695699, guid: 31ea572ae5c077840a9c96b84711f21e, type: 3}
+  m_Sprite: {fileID: 1592977384, guid: d93c69cd617f62347a29c3b7fb0689eb, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 0.26666668, y: 0.39333335}
+  m_Size: {x: 0.86557573, y: 0.6621094}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -118,7 +118,7 @@ Transform:
   m_GameObject: {fileID: 2372961102481538350}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.0391, y: -0.41, z: 0}
+  m_LocalPosition: {x: 0.031, y: 0.075, z: 0}
   m_LocalScale: {x: 0.5862374, y: 0.1723749, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -198,6 +198,7 @@ GameObject:
   - component: {fileID: 4572595308997272951}
   - component: {fileID: 7163587669906432470}
   - component: {fileID: -3860750472186220930}
+  - component: {fileID: 5594326935516551470}
   m_Layer: 0
   m_Name: WarriorTank
   m_TagString: Untagged
@@ -272,16 +273,16 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 23
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -399464367557046054, guid: 31ea572ae5c077840a9c96b84711f21e, type: 3}
+  m_Sprite: {fileID: 117756061, guid: d93c69cd617f62347a29c3b7fb0689eb, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 0.47777778, y: 0.8422222}
+  m_Size: {x: 0.6838634, y: 0.6777344}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
+  m_SpriteSortPoint: 1
   m_BlendShapeWeights: []
 --- !u!50 &2334746954514019072
 Rigidbody2D:
@@ -344,8 +345,8 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Size: {x: 0.48, y: 0.86}
+  m_Offset: {x: 0, y: 0.3388672}
+  m_Size: {x: 0.6838634, y: 0.6777344}
   m_Direction: 0
 --- !u!114 &7163587669906432470
 MonoBehaviour:
@@ -362,7 +363,19 @@ MonoBehaviour:
   unitData: {fileID: 11400000, guid: 2c761c06cc0a5d04da09fe2d4cc504da, type: 2}
   dieEvent:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 3812919439916640134}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
   team: 0
 --- !u!195 &-3860750472186220930
 NavMeshAgent:
@@ -386,6 +399,19 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!210 &5594326935516551470
+SortingGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3812919439916640134}
+  m_Enabled: 1
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_SortAtRoot: 0
+  m_Sort3DAs2D: 0
 --- !u!1 &7313120819527373378
 GameObject:
   m_ObjectHideFlags: 0
@@ -412,7 +438,7 @@ Transform:
   m_GameObject: {fileID: 7313120819527373378}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.6168828, w: -0.787055}
-  m_LocalPosition: {x: 0.239, y: -0.013, z: 0}
+  m_LocalPosition: {x: 0.264, y: 0.331, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -465,14 +491,14 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 39
+  m_SortingOrder: -941
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -6021659553255016328, guid: 31ea572ae5c077840a9c96b84711f21e, type: 3}
+  m_Sprite: {fileID: 402528172, guid: d93c69cd617f62347a29c3b7fb0689eb, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 0.16888888, y: 0.99333334}
+  m_Size: {x: 0.29308432, y: 0.9042969}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1

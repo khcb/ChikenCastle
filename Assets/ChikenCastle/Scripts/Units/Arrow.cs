@@ -102,6 +102,9 @@ public class Arrow : MonoBehaviour
             target.TakeDamage(damage);
         }
 
+        AudioManager.Instance.PlaySound(
+                SoundType.Arrow
+            );
         Destroy(gameObject);
     }
 }

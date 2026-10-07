@@ -16,13 +16,20 @@ public class ShopManager : MonoBehaviour
 
     private readonly List<BuyUnitButton> spawnedButtons = new();
 
+    private UnitData selectedUnit;
+    private int selectedCount;
     private BuyUnitButton selectedButton;
+
+
+    // =========================================================
+    // ЖИЗНЕННЫЙ ЦИКЛ
+    // =========================================================
 
     private void OnEnable()
     {
         if (playerResources != null)
         {
-            playerResources.OnResourcesChanged += RefreshButtons;
+            playerResources.OnResourcesChanged += OnResourcesChanged;
         }
     }
 
@@ -30,7 +37,7 @@ public class ShopManager : MonoBehaviour
     {
         if (playerResources != null)
         {
-            playerResources.OnResourcesChanged -= RefreshButtons;
+            playerResources.OnResourcesChanged -= OnResourcesChanged;
         }
     }
 
@@ -39,20 +46,90 @@ public class ShopManager : MonoBehaviour
         InitializeShop();
     }
 
-    // Создаём кнопки выбранных игроком юнитов
+
+    // =========================================================
+    // РЕСУРСЫ И UI
+    // =========================================================
+
+    private void OnResourcesChanged(int currentResources)
+    {
+        UpdateUnitButtons();
+    }
+
+    public void UpdateUnitButtons()
+    {
+        if (playerResources == null)
+            return;
+
+        int currentResources =
+            playerResources.CurrentResources;
+
+        foreach (BuyUnitButton button in spawnedButtons)
+        {
+            if (button == null)
+                continue;
+
+            UnitData unitData =
+                button.UnitData;
+
+            if (unitData == null)
+                continue;
+
+
+            // Сколько уже выбрано
+            int countToAdd = 1;
+
+            if (selectedUnit == unitData)
+            {
+                countToAdd =
+                    selectedCount + 1;
+            }
+
+
+            bool enoughResources =
+                currentResources >=
+                unitData.Cost * countToAdd;
+
+
+            bool canAdd =
+                spawner != null &&
+                spawner.CanAddUnits(
+                    unitData,
+                    countToAdd
+                );
+
+
+            button.UpdateInteractable(
+                currentResources,
+                enoughResources && canAdd
+            );
+        }
+    }
+
+
+    // =========================================================
+    // СОЗДАНИЕ МАГАЗИНА
+    // =========================================================
+
     private void InitializeShop()
     {
         ClearShop();
 
         if (playerData == null)
         {
-            Debug.LogWarning("ShopManager: PlayerData не задан.");
+            Debug.LogWarning(
+                "ShopManager: PlayerData не задан."
+            );
+
             return;
         }
 
         if (playerData.SelectedUnits == null)
         {
-            Debug.LogWarning("ShopManager: у PlayerData нет выбранных юнитов.");
+            Debug.LogWarning(
+                "ShopManager: у PlayerData нет выбранных юнитов."
+            );
+
             return;
         }
 
@@ -62,118 +139,248 @@ public class ShopManager : MonoBehaviour
                 continue;
 
             GameObject buttonObject =
-                Instantiate(buttonPrefab, buttonsParent);
+                Instantiate(
+                    buttonPrefab,
+                    buttonsParent
+                );
 
             if (!buttonObject.TryGetComponent<BuyUnitButton>(
-                    out BuyUnitButton button))
+                out BuyUnitButton button))
             {
                 Debug.LogWarning(
                     "На buttonPrefab отсутствует BuyUnitButton."
                 );
 
+                Destroy(buttonObject);
                 continue;
             }
 
-            button.Setup(unitData, this);
+            button.Setup(
+                unitData,
+                this
+            );
+
             spawnedButtons.Add(button);
         }
 
-        if (playerResources != null)
-        {
-            RefreshButtons(playerResources.CurrentResources);
-        }
+        UpdateUnitButtons();
     }
 
-    // Обновляем доступность кнопок после изменения денег
-    private void RefreshButtons(int currentGold)
+
+    // =========================================================
+    // ВЫБОР ЮНИТА
+    // =========================================================
+
+    public void AddUnit(
+        UnitData unitData,
+        BuyUnitButton button)
     {
-        foreach (BuyUnitButton button in spawnedButtons)
-        {
-            if (button == null)
-                continue;
-
-            button.UpdateInteractable(currentGold);
-        }
-    }
-
-    // Вызывается BuyUnitButton при нажатии
-    public void SelectButton(
-        BuyUnitButton button,
-        UnitData unitData)
-    {
-        if (button == null || unitData == null)
+        if (unitData == null || button == null)
             return;
-
-        // Повторное нажатие отменяет выбор
-        if (selectedButton == button)
-        {
-            CancelSelection();
-            return;
-        }
-
-        // Проверяем деньги
-        if (playerResources != null &&
-            !playerResources.HasEnoughResources(unitData.Cost))
-        {
-            return;
-        }
-
-        // Снимаем выделение с предыдущей кнопки
-        if (selectedButton != null)
-        {
-            selectedButton.SetSelected(false);
-        }
-
-        // Запоминаем новую кнопку
-        selectedButton = button;
-        selectedButton.SetSelected(true);
 
         if (spawner == null)
+        {
+            Debug.LogError(
+                "ShopManager: Spawner не назначен!"
+            );
+
+            return;
+        }
+
+        if (playerResources == null)
+        {
+            Debug.LogError(
+                "ShopManager: PlayerResources не назначен!"
+            );
+
+            return;
+        }
+
+
+        // -----------------------------------------------------
+        // Если нажали другой тип юнита
+        // -----------------------------------------------------
+
+        if (selectedUnit != null &&
+            selectedUnit != unitData)
+        {
+            CancelSelection();
+        }
+
+
+        // -----------------------------------------------------
+        // Сколько хотим выбрать
+        // -----------------------------------------------------
+
+        int newCount =
+            selectedCount + 1;
+
+
+        // -----------------------------------------------------
+        // Проверяем лимит
+        // -----------------------------------------------------
+
+        if (!spawner.CanAddUnits(
+                unitData,
+                newCount))
+        {
+            Debug.Log(
+                $"Лимит {unitData.UnitName} достигнут."
+            );
+
+            return;
+        }
+
+
+        // -----------------------------------------------------
+        // Проверяем деньги
+        // -----------------------------------------------------
+
+        int totalCost =
+            unitData.Cost * newCount;
+
+        if (!playerResources.HasEnoughResources(
+                totalCost))
+        {
+            Debug.Log(
+                $"Недостаточно ресурсов для {unitData.UnitName} x{newCount}"
+            );
+
+            return;
+        }
+
+
+        // -----------------------------------------------------
+        // Выбираем кнопку
+        // -----------------------------------------------------
+
+        if (selectedButton != button)
+        {
+            if (selectedButton != null)
+            {
+                selectedButton.SetSelected(false);
+                selectedButton.SetCount(0);
+            }
+
+            selectedButton = button;
+            selectedUnit = unitData;
+
+            selectedButton.SetSelected(true);
+
+            selectedCount = 0;
+        }
+
+
+        // -----------------------------------------------------
+        // Увеличиваем количество
+        // -----------------------------------------------------
+
+        selectedCount++;
+
+        selectedButton.SetCount(
+            selectedCount
+        );
+
+
+        // -----------------------------------------------------
+        // Передаём выбор Spawner
+        // -----------------------------------------------------
+
+        spawner.SetSelectedUnit(
+            selectedUnit,
+            selectedCount
+        );
+
+
+        Debug.Log(
+            $"Выбрано: " +
+            $"{selectedUnit.UnitName} x{selectedCount}"
+        );
+
+
+        UpdateUnitButtons();
+    }
+
+
+    // =========================================================
+    // УСПЕШНЫЙ СПАВН
+    // =========================================================
+
+public void OnUnitsSpawned(
+    UnitData unitData,
+    int count)
 {
-    Debug.LogError("SHOP: Spawner НЕ назначен!");
-    return;
+    Debug.Log(
+        $"SHOP: OnUnitsSpawned вызван! " +
+        $"{unitData?.UnitName} x{count}"
+    );
+
+    if (unitData == null || count <= 0)
+        return;
+
+    if (playerResources == null)
+    {
+        Debug.LogError("SHOP: PlayerResources = NULL!");
+        return;
+    }
+
+    int totalCost =
+        unitData.Cost * count;
+
+    Debug.Log(
+        $"SHOP: пытаемся списать {totalCost}. " +
+        $"Было ресурсов: {playerResources.CurrentResources}"
+    );
+
+    if (!playerResources.TrySpendResources(totalCost))
+    {
+        Debug.LogWarning(
+            "SHOP: TrySpendResources вернул FALSE!"
+        );
+
+        return;
+    }
+
+    Debug.Log(
+        $"SHOP: ресурсы списаны. " +
+        $"Осталось: {playerResources.CurrentResources}"
+    );
+
+    CancelSelection();
 }
 
-Debug.Log("SHOP: передаю юнита в Spawner: " + unitData.UnitName);
 
-spawner.SetSelectedUnit(unitData, this);
-    }
+    // =========================================================
+    // ОТМЕНА ВЫБОРА
+    // =========================================================
 
-    // Вызывается Spawner после успешного создания юнита
-    public void OnUnitSpawned(UnitData unitData)
-    {
-        if (unitData == null)
-            return;
-
-        if (playerResources != null)
-        {
-            playerResources.TrySpendResources(unitData.Cost);
-        }
-
-        if (selectedButton != null)
-        {
-            selectedButton.StartCooldown();
-        }
-
-        CancelSelection();
-    }
-
-    // Отмена выбора
     public void CancelSelection()
     {
         if (selectedButton != null)
         {
             selectedButton.SetSelected(false);
-            selectedButton = null;
+            selectedButton.SetCount(0);
         }
+
+        selectedButton = null;
+        selectedUnit = null;
+        selectedCount = 0;
+
 
         if (spawner != null)
         {
             spawner.ClearSelectedUnit();
         }
+
+
+        UpdateUnitButtons();
     }
 
-    // Удаляем старые кнопки
+
+    // =========================================================
+    // ОЧИСТКА
+    // =========================================================
+
     private void ClearShop()
     {
         foreach (Transform child in buttonsParent)
@@ -182,6 +389,9 @@ spawner.SetSelectedUnit(unitData, this);
         }
 
         spawnedButtons.Clear();
+
         selectedButton = null;
+        selectedUnit = null;
+        selectedCount = 0;
     }
 }
